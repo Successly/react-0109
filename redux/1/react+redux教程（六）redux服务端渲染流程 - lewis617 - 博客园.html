@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0046)http://www.cnblogs.com/lewis617/p/5174861.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园</title>
+<link type="text/css" rel="stylesheet" href="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/bundle-AnotherEon001.css">
+<link type="text/css" rel="stylesheet" href="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/246025.css">
+<link title="RSS" type="application/rss+xml" rel="alternate" href="http://www.cnblogs.com/lewis617/rss">
+<link title="RSD" type="application/rsd+xml" rel="EditURI" href="http://www.cnblogs.com/lewis617/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="http://www.cnblogs.com/lewis617/wlwmanifest.xml">
+<script type="text/javascript" src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/encoder.js"></script><script src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/jquery.js" type="text/javascript"></script>  
+<script type="text/javascript">var currentBlogApp = 'lewis617', cb_enable_mathjax=false;</script>
+<script src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/blog-common.js" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+<div id="wrapper">
+<div id="header">
+
+<div id="top">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="http://www.cnblogs.com/lewis617/">天可</a></h1>
+<div id="subtitle">897473127@qq.com</div>
+</div>
+<div id="sub">
+<div class="BlogStats">随笔 - 32, 文章 - 0, 评论 - 66, 引用 - 0</div>
+</div>
+
+
+
+</div>
+<div id="main_container">
+<div id="main_content">
+<div id="content">
+	
+<div id="post_detail">
+	<div class="post">
+		<h2>
+			<a id="cb_post_title_url" href="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园.html">react+redux教程（六）redux服务端渲染流程</a>
+		</h2>
+		<div class="postbody">
+		<div id="cnblogs_post_body"><p>今天，我们要讲解的是react+redux服务端渲染。个人认为，react击败angular的真正“杀手锏”就是服务端渲染。我们为什么要实现服务端渲染，主要是为了SEO。</p>
+<h1>例子</h1>
+<p><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/814069-20160120134123062-158958063.gif" alt=""></p>
+<p>例子仍然是官方的计数器例子，不过我们实现了服务端渲染和state预加载。</p>
+<p>源代码：</p>
+<p><a href="https://github.com/lewis617/react-redux-tutorial/tree/master/redux-examples/universal" target="_blank">https://github.com/lewis617/react-redux-tutorial/tree/master/redux-examples/universal</a></p>
+<h1>虚拟API</h1>
+<p>首先，我们要模拟一个api，用于异步请求数据。代码如下：</p>
+<p>common/api/counter.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #0000ff;">function</span><span style="color: #000000;"> getRandomInt(min, max) {
+  </span><span style="color: #0000ff;">return</span> Math.floor(Math.random() * (max - min)) +<span style="color: #000000;"> min
+}
+
+export </span><span style="color: #0000ff;">function</span><span style="color: #000000;"> fetchCounter(callback) {
+  </span><span style="color: #008000;">//</span><span style="color: #008000;"> Rather than immediately returning, we delay our code with a timeout to simulate asynchronous behavior</span>
+  setTimeout(() =&gt;<span style="color: #000000;"> {
+    callback(getRandomInt(</span>1, 100<span style="color: #000000;">))
+  }, </span>500<span style="color: #000000;">)
+
+  </span><span style="color: #008000;">//</span><span style="color: #008000;"> In the case of a real world API call, you'll normally run into a Promise like this:</span>
+  <span style="color: #008000;">//</span><span style="color: #008000;"> API.getUser().then(user =&gt; callback(user))</span>
+}</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<h1>服务端请求api，发送html串和state</h1>
+<p>server/server.js（部分代码）</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre><span style="color: #008000;">//</span><span style="color: #008000;"> This is fired every time the server side receives a request</span>
+<span style="color: #000000;">app.use(handleRender)
+
+</span><span style="color: #0000ff;">function</span><span style="color: #000000;"> handleRender(req, res) {
+  </span><span style="color: #008000;">//</span><span style="color: #008000;"> Query our mock API asynchronously</span>
+  fetchCounter(apiResult =&gt;<span style="color: #000000;"> {
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> Read the counter from the request, if provided</span>
+    const params =<span style="color: #000000;"> qs.parse(req.query)
+    const counter </span>= parseInt(params.counter, 10) || apiResult || 0
+
+    <span style="color: #008000;">//</span><span style="color: #008000;"> Compile an initial state</span>
+    const initialState =<span style="color: #000000;"> { counter }
+
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> Create a new Redux store instance</span>
+    const store =<span style="color: #000000;"> configureStore(initialState)
+
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> Render the component to a string</span>
+    const html =<span style="color: #000000;"> renderToString(
+      </span>&lt;Provider store={store}&gt;
+        &lt;App /&gt;
+      &lt;/Provider&gt;
+<span style="color: #000000;">    )
+
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> Grab the initial state from our Redux store</span>
+    const finalState =<span style="color: #000000;"> store.getState()
+
+    </span><span style="color: #008000;">//</span><span style="color: #008000;"> Send the rendered page back to the client</span>
+<span style="color: #000000;">    res.send(renderFullPage(html, finalState))
+  })
+}
+
+</span><span style="color: #0000ff;">function</span><span style="color: #000000;"> renderFullPage(html, initialState) {
+  </span><span style="color: #0000ff;">return</span><span style="color: #000000;"> `
+    </span>&lt;!doctype html&gt;
+    &lt;html&gt;
+      &lt;head&gt;
+        &lt;title&gt;Redux Universal Example&lt;/title&gt;
+      &lt;/head&gt;
+      &lt;body&gt;
+        &lt;div id="app"&gt;${html}&lt;/div&gt;
+        &lt;script&gt;<span style="color: #000000;">
+          window.__INITIAL_STATE__ </span>=<span style="color: #000000;"> ${JSON.stringify(initialState)}
+        </span>&lt;/script&gt;
+        &lt;script src="/static/bundle.js"&gt;&lt;/script&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+<span style="color: #000000;">    `
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<ol>
+<li>api写好了，我们调用了这个api，即fetchCounter，这个api函数也会产生一个回调，我们在回调中获取counter值</li>
+<li>如果中间件请求中有参数，则const params =<span style="color: #000000;"> qs.parse(req.query)，counter为parseInt(params.counter, 10)。否则counter为api的回调中返回的值apiResult，如果前两个都没有则为0。qs用于解析http请求中的querystring，就是？param=sth。</span></li>
+<li><span style="color: #000000;">得到counter，我们就得到了state，用state作为参数，重新生成一个store实例，每次都要重新生成一个新的store实例。然后用react的服务端渲染生成一个html串，把它发送出去</span></li>
+<li>同时，我们还要发送一个const finalState =<span style="color: #000000;"> store.getState()</span>出去，让客户端拿到这个state渲染，为什么？因为要保证客户端和服务端渲染的组件一样。</li>
+</ol>
+<h1>“提了裤子不认人”的服务端渲染</h1>
+<p>既然有了服务端渲染，为何还要用客户端渲染，因为服务端渲染是“提了裤子不认人”，渲染完，我们的程序就不会动了（因为是一堆字符串）,客户端则可以让程序继续动起来，因为客户端有js，可以调用方法重绘浏览器界面。</p>
+<h1>客户端拿到state再渲染一次</h1>
+<p>既然要再渲染一次，为何还要服务端渲染？为了seo，我们的服务端渲染不只是给用户看的，主要是给那些“低能”的网络爬虫看的。</p>
+<p>好吧，忍忍火，我们继续工作，客户端再渲染一次。</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>const initialState =<span style="color: #000000;"> window.__INITIAL_STATE__
+const store </span>=<span style="color: #000000;"> configureStore(initialState)
+const rootElement </span>= document.getElementById('app'<span style="color: #000000;">)
+
+render(
+  </span>&lt;Provider store={store}&gt;
+    &lt;App/&gt;
+  &lt;/Provider&gt;,
+<span style="color: #000000;">  rootElement
+)</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>其实客户端渲染也就拿到个初始state，然后render而已，没有很多代码。</p>
+<p>我们的state是从<span style="color: #000000;">window.__INITIAL_STATE__</span>获取的，因为服务端把要给客户端的state放在了这个全局变量上面。</p>
+<h1>"玄乎"的预载state</h1>
+<p>预载state，说得这么“玄乎”，好像很高大上，其实就是把state在服务器那边就生成好，然后传过来直接给客户端用。没有那么“玄乎”。</p>
+<hr>
+<h1>教程源代码及目录</h1>
+<p>如果您觉得本博客教程帮到了您，就赏颗星吧！</p>
+<p><a href="https://github.com/lewis617/react-redux-tutorial" target="_blank">https://github.com/lewis617/react-redux-tutorial</a></p>
+<p>&nbsp;</p></div><div id="MySignature" style="display: block;"><div id="AllanboltSignature">    
+        <div>作者：<a href="http://www.cnblogs.com/lewis617/" target="_blank">lewis617</a></div>
+        <div>出处：<a href="http://www.cnblogs.com/lewis617/" target="_blank">http://www.cnblogs.com/lewis617/</a></div>
+        <div>本文版权归作者和博客园共有，欢迎转载，但未经作者同意必须保留此段声明，且在文章页面明显位置给出原文连接，否则保留追究法律责任的权利.</div>  
+    </div></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory">分类: <a href="http://www.cnblogs.com/lewis617/category/739251.html">前端</a></div>
+<div id="EntryTag">标签: <a href="http://www.cnblogs.com/lewis617/tag/react/">react</a>, <a href="http://www.cnblogs.com/lewis617/tag/redux/">redux</a></div>
+<div id="blog_post_info"><div id="green_channel">
+<a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(5174861,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+<a id="green_channel_follow" onclick="c_follow();" href="javascript:void(0);">关注我</a>
+<a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a><a id="green_channel_contact" href="http://msg.cnblogs.com/send/lewis617" target="_blank">联系我</a>
+<a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/icon_weibo_24.png" alt=""></a>
+<a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+<div id="author_profile_info" class="author_profile_info">
+<a href="http://home.cnblogs.com/u/lewis617/" target="_blank"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/sample_face.gif" class="author_avatar" alt=""></a>
+<div id="author_profile_detail" class="author_profile_info">
+<a href="http://home.cnblogs.com/u/lewis617/">lewis617</a><br>
+<a href="http://home.cnblogs.com/u/lewis617/followees">关注 - 0</a><br>
+<a href="http://home.cnblogs.com/u/lewis617/followers">粉丝 - 63</a>
+</div>
+</div>
+<div class="clear"></div>
+<div id="author_profile_honor"></div>
+<div id="author_profile_follow">
+    <a href="javascript:void(0);" onclick="c_follow();return false;">+加关注</a>
+</div>
+</div>
+<div id="div_digg">										
+    <div class="diggit" onclick="votePost(5174861,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">1</span>
+    </div>
+	<div class="buryit" onclick="votePost(5174861,&#39;Bury&#39;)"> 
+		<span class="burynum" id="bury_count">0</span>
+	</div>
+	<div class="clear"></div>	
+	<div class="diggword" id="digg_tips">
+    (请您对文章做出评价)
+    </div>	
+</div>
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="http://www.cnblogs.com/lewis617/p/5170835.html" class="p_n_p_prefix">« </a> 上一篇：<a href="http://www.cnblogs.com/lewis617/p/5170835.html" title="发布于2016-01-30 12:18">react+redux教程（五）异步、单一state树结构、componentWillReceiveProps</a><br><a href="http://www.cnblogs.com/lewis617/p/5177852.html" class="p_n_p_prefix">» </a> 下一篇：<a href="http://www.cnblogs.com/lewis617/p/5177852.html" title="发布于2016-02-02 16:20">react+redux教程（七）自定义redux中间件</a><br></div>
+</div>
+
+
+		</div>
+		<p class="postfoot">
+			posted on <span id="post-date">2016-02-01 11:20</span> <a href="http://www.cnblogs.com/lewis617/">lewis617</a> 阅读(<span id="post_view_count">2228</span>) 评论(<span id="post_comment_count">0</span>)  <a href="http://i.cnblogs.com/EditPosts.aspx?postid=5174861" rel="nofollow">编辑</a> <a href="http://www.cnblogs.com/lewis617/p/5174861.html#" onclick="AddToWz(5174861);return false;">收藏</a>
+		</p>
+	</div>
+	<script type="text/javascript">var allowComments=true,isLogined=false,cb_blogId=246025,cb_entryId=5174861,cb_blogApp=currentBlogApp,cb_blogUserGuid='2b2be196-0c60-e511-b908-9dcfd8948a71',cb_entryCreatedDate='2016/2/1 11:20:00';loadViewCount(cb_entryId);</script>
+	
+	</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="http://www.cnblogs.com/lewis617/p/5174861.html#" onclick="return RefreshPage();">刷新页面</a><a href="http://www.cnblogs.com/lewis617/p/5174861.html#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank">【推荐】50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="http://www.rongcloud.cn/" target="_blank">【推荐】融云即时通讯云－豆果美食、Faceu等亿级APP都在用</a><br><a href="http://group.cnblogs.com/topic/75069.html" target="_blank">【福利】你是我的好朋友，我要送你个天猫红包</a><br><a href="https://event.open.alipay.com/?t=201607211659" target="_blank">【活动】蚂蚁金服开放平台合作伙伴大会(北京8.10)</a><br></div>
+<div id="opt_under_post"></div>
+<div id="ad_c1" class="c_ad_block"><a href="http://www.gcpowertools.com.cn/products/activereports_overview.htm?utm_source=cnblogs&utm_medium=blogpage&utm_term=bottom&utm_content=AR&utm_campaign=community" target="_blank"><img width="300" height="250" src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/24442-20160630110639921-1991307518.gif" alt=""></a></div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>最新IT新闻</b>:<br> ·  <a href="http://news.cnblogs.com/n/550014/" target="_blank">Slack公布其投资的11家机器人公司，这背后酝酿什么大招？</a><br> ·  <a href="http://news.cnblogs.com/n/550013/" target="_blank">百度悄悄推出Android键盘TalkType 可实现快速语音输入</a><br> ·  <a href="http://news.cnblogs.com/n/550012/" target="_blank">国产手机越来越贵 因为“性价比高的，都是垃圾”？</a><br> ·  <a href="http://news.cnblogs.com/n/550011/" target="_blank">余晟：IT人的巨流河【续】</a><br> ·  <a href="http://news.cnblogs.com/n/550010/" target="_blank">优秀的程序反而是廉价</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="ad_c2" class="c_ad_block"><a href="https://www.jiguang.cn/?from=cnblogs01" target="_blank"><img width="468" height="60" src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/24442-20160613130538213-1713265809.jpg" alt=""></a></div>
+<div id="under_post_kb"><div class="itnews c_ad_block" id="kb_block"><b>最新知识库文章</b>:<br><div id="kb_recent"> ·  <a href="http://kb.cnblogs.com/page/549631/" target="_blank">知其所以然（以算法学习为例）</a><br> ·  <a href="http://kb.cnblogs.com/page/548394/" target="_blank">如何给变量取个简短且无歧义的名字</a><br> ·  <a href="http://kb.cnblogs.com/page/549080/" target="_blank">编程的智慧</a><br> ·  <a href="http://kb.cnblogs.com/page/549049/" target="_blank">写给初学前端工程师的一封信</a><br> ·  <a href="http://kb.cnblogs.com/page/544641/" target="_blank">抽象：程序员必备的能力</a><br></div>» <a href="http://kb.cnblogs.com/" target="_blank">更多知识库文章...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+$(function () {
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverAdT2();
+    deliverAdC1();
+    deliverAdC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);    
+});
+</script>
+</div>
+
+
+</div>
+</div>
+<div id="leftmenu">
+
+
+<h3>导航</h3>
+<ul>
+<li>
+<a id="MyLinks1_HomeLink" href="http://www.cnblogs.com/">博客园</a></li>
+<li>
+<a id="MyLinks1_MyHomeLink" class="two_words" href="http://www.cnblogs.com/lewis617/">首页</a></li>
+<li>
+<a id="MyLinks1_NewPostLink" rel="nofollow" href="http://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li>
+<a id="MyLinks1_ContactLink" accesskey="9" class="two_words" rel="nofollow" href="http://msg.cnblogs.com/send/lewis617">联系</a></li>
+<li>
+<a id="MyLinks1_Syndication" class="two_words" href="http://www.cnblogs.com/lewis617/rss">订阅</a>
+<a id="MyLinks1_XMLLink" href="http://www.cnblogs.com/lewis617/rss"><img src="./react+redux教程（六）redux服务端渲染流程 - lewis617 - 博客园_files/xml.gif" alt="订阅"></a>
+</li>
+<li>
+<a id="MyLinks1_Admin" class="two_words" rel="nofollow" href="http://i.cnblogs.com/">管理</a></li>
+</ul>
+
+<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2016/06/01&#39;);return false;">&lt;</a></td><td align="center">2016年7月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2016/08/01&#39;);return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" align="center" abbr="日" scope="col">日</th><th class="CalDayHeader" align="center" abbr="一" scope="col">一</th><th class="CalDayHeader" align="center" abbr="二" scope="col">二</th><th class="CalDayHeader" align="center" abbr="三" scope="col">三</th><th class="CalDayHeader" align="center" abbr="四" scope="col">四</th><th class="CalDayHeader" align="center" abbr="五" scope="col">五</th><th class="CalDayHeader" align="center" abbr="六" scope="col">六</th></tr><tr><td class="CalOtherMonthDay" align="center">26</td><td class="CalOtherMonthDay" align="center">27</td><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td class="CalWeekendDay" align="center">2</td></tr><tr><td class="CalWeekendDay" align="center">3</td><td align="center">4</td><td align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td class="CalWeekendDay" align="center">9</td></tr><tr><td class="CalWeekendDay" align="center">10</td><td align="center">11</td><td align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td class="CalWeekendDay" align="center">16</td></tr><tr><td class="CalWeekendDay" align="center">17</td><td align="center">18</td><td align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td class="CalTodayDay" align="center">23</td></tr><tr><td class="CalWeekendDay" align="center">24</td><td align="center">25</td><td align="center">26</td><td align="center">27</td><td align="center">28</td><td align="center">29</td><td class="CalWeekendDay" align="center">30</td></tr><tr><td class="CalWeekendDay" align="center">31</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+<meta name="vs_showGrid" content="False">
+
+<h3>公告</h3>
+<div id="blog-news"><div id="profile_block">昵称：<a href="http://home.cnblogs.com/u/lewis617/">lewis617</a><br>园龄：<a href="http://home.cnblogs.com/u/lewis617/" title="入园时间：2015-09-21">10个月</a><br>粉丝：<a href="http://home.cnblogs.com/u/lewis617/followers/">63</a><br>关注：<a href="http://home.cnblogs.com/u/lewis617/followees/">0</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="cnblogs.UserManager.FollowBlogger(&#39;2b2be196-0c60-e511-b908-9dcfd8948a71&#39;)">+加关注</a></div></div></div><script type="text/javascript">loadBlogNews();</script>
+
+<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="http://www.cnblogs.com/lewis617/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="http://www.cnblogs.com/lewis617/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="http://www.cnblogs.com/lewis617/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="http://www.cnblogs.com/lewis617/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="http://www.cnblogs.com/lewis617/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<h3 class="catListTitle">我的标签</h3>
+<div id="MyTag">
+<ul>
+<li><a href="http://www.cnblogs.com/lewis617/tag/angular2/">angular2</a>(11)</li><li><a href="http://www.cnblogs.com/lewis617/tag/react/">react</a>(10)</li><li><a href="http://www.cnblogs.com/lewis617/tag/redux/">redux</a>(9)</li><li><a href="http://www.cnblogs.com/lewis617/tag/requirejs/">requirejs</a>(4)</li><li><a href="http://www.cnblogs.com/lewis617/tag/angularjs/">angularjs</a>(3)</li><li><a href="http://www.cnblogs.com/lewis617/tag/flask/">flask</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/karma/">karma</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/webpack/">webpack</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/r.js/">r.js</a>(1)</li><li><a href="http://www.cnblogs.com/lewis617/tag/reflux/">reflux</a>(1)</li><li><a href="http://www.cnblogs.com/lewis617/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+		<h3>随笔分类</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_0_Link_0" href="http://www.cnblogs.com/lewis617/category/739255.html">Android</a></li>
+			
+				<li><a id="CatList_LinkList_0_Link_1" href="http://www.cnblogs.com/lewis617/category/739253.html">windows(2)</a></li>
+			
+				<li><a id="CatList_LinkList_0_Link_2" href="http://www.cnblogs.com/lewis617/category/739251.html">前端(30)</a></li>
+			
+				</ul>
+			
+	
+		<h3>随笔档案</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_1_Link_0" href="http://www.cnblogs.com/lewis617/archive/2016/04.html">2016年4月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_1" href="http://www.cnblogs.com/lewis617/archive/2016/03.html">2016年3月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_2" href="http://www.cnblogs.com/lewis617/archive/2016/02.html">2016年2月 (11)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_3" href="http://www.cnblogs.com/lewis617/archive/2016/01.html">2016年1月 (8)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_4" href="http://www.cnblogs.com/lewis617/archive/2015/12.html">2015年12月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_5" href="http://www.cnblogs.com/lewis617/archive/2015/10.html">2015年10月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_6" href="http://www.cnblogs.com/lewis617/archive/2015/09.html">2015年9月 (3)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_7" href="http://www.cnblogs.com/lewis617/archive/2015/04.html">2015年4月 (2)</a></li>
+			
+				</ul>
+			
+	</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<h3 class="catListTitle">最新评论</h3>
+<div class="RecentComment" id="RecentComments">
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3475433">1. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@leavemealone不需要，计数器这个例子仅作为教学，在实际中，一个action可以改变多个数据。事实上，action是通过业务来定的，并非数据...</li>
+        <li class="recent_comment_author">--lewis617</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5129609.html#3473527">2. Re:react+reflux入门教程</a></li>
+        <li class="recent_comment_body">还没看，应该是好文！哈哈。</li>
+        <li class="recent_comment_author">--ACaptain</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3472654">3. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">每一个state.XXX 做不同的操作的时候都需要注册一个actions函数吗？this.state = {num1: 1 , mum2: 2 };比如：当num1 和 num2都需要进行加减乘除的......</li>
+        <li class="recent_comment_author">--leavemealone</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3469561">4. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@naruto丶阳dispatch一个action创建函数只是发起一个信号，真正更新state的是reducer。如果非要纠结这句话，可以理解为我省略了“然后使用reducer更新state”这半句。...</li>
+        <li class="recent_comment_author">--lewis617</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3468648">5. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@lewis617我知道是用reducer的纯函数更新啊，我想问的是store.dispatch(action)也能更新state是什么意思？...</li>
+        <li class="recent_comment_author">--naruto丶阳</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<h3 class="catListTitle">阅读排行榜</h3>
+<div class="RecentComment" id="TopViewPosts"> 
+	<div id="TopViewPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(16055)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">2. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(5300)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5129609.html">3. react+reflux入门教程(4831)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">4. angular2系列教程（一）hello world(3422)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5149006.html">5. react+redux教程（三）reduce()、filter()、map()、some()、every()、...展开属性(3339)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<h3 class="catListTitle">评论排行榜</h3>
+<div class="RecentComment" id="TopCommentsPosts">
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(26)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">2. angular2系列教程（一）hello world(14)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5177852.html">3. react+redux教程（七）自定义redux中间件(7)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">4. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(4)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5126334.html">5. angular开发者吐槽react+redux的复杂：“一个demo证明你的开发效率低下”(3)</a></li></ul></div>
+</div></div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div class="RecentComment">
+	<div id="TopDiggPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(10)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">2. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(5)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5129609.html">3. react+reflux入门教程(4)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">4. angular2系列教程（一）hello world(3)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5170835.html">5. react+redux教程（五）异步、单一state树结构、componentWillReceiveProps(3)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+
+</div>
+</div>
+<div class="clear"></div>
+<div id="footer">
+
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	<a id="Footer1_Hyperlink3" name="Hyperlink1" href="http://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br>
+	Copyright © lewis617
+</p>
+</div>
+</div>
+
+
+
+</body></html>

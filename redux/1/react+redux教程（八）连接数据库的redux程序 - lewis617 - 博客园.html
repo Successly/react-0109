@@ -1,0 +1,481 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0046)http://www.cnblogs.com/lewis617/p/5180097.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园</title>
+<link type="text/css" rel="stylesheet" href="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/blog-common.css">
+<link id="MainCss" type="text/css" rel="stylesheet" href="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/bundle-AnotherEon001.css">
+<link type="text/css" rel="stylesheet" href="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/246025.css">
+<link title="RSS" type="application/rss+xml" rel="alternate" href="http://www.cnblogs.com/lewis617/rss">
+<link title="RSD" type="application/rsd+xml" rel="EditURI" href="http://www.cnblogs.com/lewis617/rsd.xml">
+<link type="application/wlwmanifest+xml" rel="wlwmanifest" href="http://www.cnblogs.com/lewis617/wlwmanifest.xml">
+<script type="text/javascript" src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/encoder.js"></script><script src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/jquery.js" type="text/javascript"></script>  
+<script type="text/javascript">var currentBlogApp = 'lewis617', cb_enable_mathjax=false;</script>
+<script src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/blog-common.js" type="text/javascript"></script>
+</head>
+<body>
+<a name="top"></a>
+
+<div id="wrapper">
+<div id="header">
+
+<div id="top">
+<h1><a id="Header1_HeaderTitle" class="headermaintitle" href="http://www.cnblogs.com/lewis617/">天可</a></h1>
+<div id="subtitle">897473127@qq.com</div>
+</div>
+<div id="sub">
+<div class="BlogStats">随笔 - 32, 文章 - 0, 评论 - 66, 引用 - 0</div>
+</div>
+
+
+
+</div>
+<div id="main_container">
+<div id="main_content">
+<div id="content">
+	
+<div id="post_detail">
+	<div class="post">
+		<h2>
+			<a id="cb_post_title_url" href="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园.html">react+redux教程（八）连接数据库的redux程序</a>
+		</h2>
+		<div class="postbody">
+		<div id="cnblogs_post_body"><p>前面所有的教程都是解读官方的示例代码，是时候我们自己写个连接数据库的redux程序了！</p>
+<h1>例子</h1>
+<p><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/814069-20160203151213100-962178808.gif" alt="" width="660" height="524"></p>
+<p>这个例子代码，是我自己写的程序，一个非常简单的todo，但是包含了redux插件的用法，中间件的用法，连接数据库的方法等多个知识点。</p>
+<p>源代码：</p>
+<p><a href="https://github.com/lewis617/react-redux-tutorial/tree/master/redux-wilddog-todos" target="_blank">https://github.com/lewis617/react-redux-tutorial/tree/master/redux-wilddog-todos</a></p>
+<p>运行方法：</p>
+<p>npm install</p>
+<p>npm run build</p>
+<p>手动打开index.html</p>
+<h1>wilddog数据库</h1>
+<p>作为一名曾经的angular开发者，我非常喜欢用firebase来做自己的数据库，并结合angular实现酷炫的“三向数据绑定”。wilddog是中国的“firebase”，不仅语法兼容，而且国内速度更快。</p>
+<p>下面的程序都是基于wilddog和angular的程序，也用了我曾经的最爱requirejs，有兴趣的同学可以看看，顺便赏我点star哈哈！</p>
+<p><a href="https://github.com/lewis617/wild-angular-seed" target="_blank">https://github.com/lewis617/wild-angular-seed</a></p>
+<p><a href="https://github.com/lewis617/daily-task" target="_blank">https://github.com/lewis617/daily-task</a></p>
+<p>如今写react程序，仍然可以使用wilddog或者firebase，不仅不用配置数据库服务，也不用写数据库增删改查的api程序了，可以让我们前端工程师专注于写前端程序！</p>
+<p><a href="https://www.wilddog.com/" target="_blank">https://www.wilddog.com/</a></p>
+<h1>redux的chrome插件</h1>
+<p>本程序也用到了redux的chrome插件，可以帮助我们自动生成redux的devtool界面，非常好用啊！只需要在你的程序store注册中，加入一行代码：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>export <span style="color: #0000ff;">default</span> (initialState) =&gt;<span style="color: #000000;"> {
+  const store </span>=<span style="color: #000000;"> compose(
+      applyMiddleware(
+          thunk,
+          createLogger()
+      ),
+      window.devToolsExtension </span>? window.devToolsExtension() : f =&gt;<span style="color: #000000;"> f
+  )(createStore)(reducers, initialState);
+
+  </span><span style="color: #0000ff;">return</span><span style="color: #000000;"> store;
+};</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>就是这行代码：</p>
+<div class="cnblogs_code">
+<pre>window.devToolsExtension ? window.devToolsExtension() : f =&gt; f</pre>
+</div>
+<p>安装方法，就是去chrome的市场搜索redux关键字就可以了！</p>
+<h1>没有服务端渲染和热替换</h1>
+<p>为什么要把这个单独提起来说呢？这是一个历史遗留问题。我们研究所用的web框架是flask，一个python框架，包括前端也是用flask的jinja模板。没有nodejs也就意味着无法使用服务端渲染和热替换这两个炫酷的功能。</p>
+<p>那么不是基于nodejs的前端程序，还能否使用redux和react呢？当然可以，我只通过webpack生成一个js文件，将js文件放进html里面。其他所有的功能都不要。这也是可以的。这也算是结合非node平台的一个实践经验吧！当然你的包管理还得用npm。</p>
+<p>从另一个方面来说，基于nodejs的前端时代已经来临，如果你拒绝它，将会失去很多，或者寸步难行！</p>
+<h1>获取所有的todos</h1>
+<p>我们在action中进行http请求和服务端交互，即便是在中间件中执行http请求，其实质也是dispatch的封装。那么这个程序的关键就是action的编写。</p>
+<p>实例化wilddog，定义action类型:</p>
+<p>actions.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>import Wilddog from 'wilddog/lib/wilddog-node'
+<span style="color: #008000;">/*</span><span style="color: #008000;">
+ * action 类型
+ </span><span style="color: #008000;">*/</span><span style="color: #000000;">
+export const GET_TODO_ERROR </span>= 'GET_TODO_ERROR'<span style="color: #000000;">;
+export const GET_TODO_OK </span>= 'GET_TODO_OK'<span style="color: #000000;">;
+export const ADD_TODO_ERROR </span>= 'ADD_TODO_ERROR'<span style="color: #000000;">;
+export const ADD_TODO_OK </span>= 'ADD_TODO_OK'<span style="color: #000000;">;
+export const REMOVE_TODO_OK </span>= 'REMOVE_TODO_OK'<span style="color: #000000;">;
+export const REMOVE_TODO_ERROR </span>= 'REMOVE_TODO_ERROR'<span style="color: #000000;">;
+
+let wilddog</span>=<span style="color: #0000ff;">new</span> Wilddog('https://redux-wilddog-todos.wilddogio.com')</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>从wilddog数据库中获取所有的todos，因为wilddog数据库是树状结构，生成的列表，其实质也是个对象，所以我们需要将其转化为数组：</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>export <span style="color: #0000ff;">function</span><span style="color: #000000;"> getTodo() {
+  </span><span style="color: #0000ff;">return</span> (dispatch,getState)=&gt;<span style="color: #000000;">{
+
+    wilddog.child(</span>'todos').once('value',(snapshot)=&gt;<span style="color: #000000;">{
+      let obj</span>=<span style="color: #000000;">snapshot.val();
+      let array</span>=<span style="color: #000000;">[];
+      </span><span style="color: #0000ff;">for</span>(let key <span style="color: #0000ff;">in</span><span style="color: #000000;"> obj){
+        array.push({key:key,text:obj[key].text})
+      }
+      dispatch({
+        type: GET_TODO_OK,
+        payload: array
+      })
+    },(err)</span>=&gt;<span style="color: #000000;">{
+      dispatch({
+        type: GET_TODO_ERROR,
+        payload: err
+      })
+    });
+
+
+  }
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p><span style="color: #000000;">wilddog.child('todos').once('value',function)</span>是获取‘todos’节点数据的方法。获取到数据后，转化为数组。然后dispatch一个<span style="color: #000000;">GET_TODO_OK</span>，告诉reducer获取数据成功，可以更新state了。数据都装在payload中。如果失败，则dispatch一<span style="color: #000000;">GET_TODO_ERROR。</span></p>
+<p><span style="color: #000000;">就是这么简单，不用写后台程序，在js中直接操作数据库！</span></p>
+<p><span style="color: #000000;">那么在哪里执行这个<span style="color: #000000;">getTodo呢？你可以在组件渲染后dispatch它，也可以在初始化store后，立即执行它。我用的是后面一种：</span></span></p>
+<p><span style="color: #000000;"><span style="color: #000000;">index.js</span></span></p>
+<p>&nbsp;</p>
+<div class="cnblogs_code">
+<pre>import { getTodo,registerListeners} from './actions'<span style="color: #000000;">
+
+let store </span>=<span style="color: #000000;"> createStore();
+
+store.dispatch(getTodo())
+</span></pre>
+</div>
+<p>&nbsp;</p>
+<h1>添加新的todo</h1>
+<p>在action中定义添加todo的方法：</p>
+<p>actions.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>export <span style="color: #0000ff;">function</span><span style="color: #000000;"> addTodo(text) {
+  </span><span style="color: #0000ff;">return</span> (dispatch,getState)=&gt;<span style="color: #000000;">{
+
+    wilddog.child(</span>'todos'<span style="color: #000000;">).push({
+      text
+    },(err)</span>=&gt;<span style="color: #000000;">{
+      </span><span style="color: #0000ff;">if</span><span style="color: #000000;">(err){dispatch({type:ADD_TODO_ERROR,payload:err})}
+    });
+  }
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>通过<span style="color: #000000;">wilddog.child('todos'<span style="color: #000000;">).push</span></span>()方法，直接往数据库中插入数据，第二参数是回调，失败的话，dispatch相应的action。</p>
+<p>那么成功后的action在哪执行？我们需要再写一个function，绑定数据变动的回调。其实正常情况下，我们在这个function中就直接写成功后的回调了，主要是因为wilddog数据库的成功回调不在push这个方法中。</p>
+<p>actions.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>export <span style="color: #0000ff;">function</span><span style="color: #000000;"> registerListeners() {
+  </span><span style="color: #0000ff;">return</span> (dispatch, getState) =&gt;<span style="color: #000000;"> {
+
+    wilddog.child(</span>'todos').on('child_removed', snapshot =&gt;<span style="color: #000000;"> {
+      dispatch({
+        type: REMOVE_TODO_OK,
+        payload: snapshot.key()
+      })
+    });
+
+    wilddog.child(</span>'todos').on('child_added', snapshot =&gt;<span style="color: #000000;"> dispatch({
+      type: ADD_TODO_OK,
+      payload: Object.assign({},snapshot.val(),{key:snapshot.key()})
+    }));
+
+  };
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p><span style="color: #000000;">wilddog.child('todos').on('child_added'</span>) &nbsp; 这个方法定义了添加todo成功后的回调，我们执行了一个<span style="color: #000000;">ADD_TODO_OK</span> 的action，并把新的todo对象放在payload中返回给reducer。</p>
+<p>你也看到了，我们顺便把移除todo成功的回调也定义了。</p>
+<p>我们在哪执行这个绑定函数呢？就在获取所有todos的后面吧！其实放在组件渲染完也可以！</p>
+<p>index.js</p>
+<div class="cnblogs_code">
+<pre>store.dispatch(registerListeners())</pre>
+</div>
+<h1>移除指定todo</h1>
+<p>在action中添加移除todo的方法：</p>
+<p>actions.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>export <span style="color: #0000ff;">function</span><span style="color: #000000;"> removeTodo(key) {
+  </span><span style="color: #0000ff;">return</span> (dispatch,getState)=&gt;<span style="color: #000000;">{
+
+    wilddog.child(`todos</span>/${key}`).remove((err)=&gt;{
+      <span style="color: #0000ff;">if</span><span style="color: #000000;">(err)dispatch({type:REMOVE_TODO_ERROR,payload:err})
+    });
+  }
+}</span></pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>通过wilddog的remove方法移除数据库的指定节点。就是这么简单！然后编写失败后的回调以及action！</p>
+<h1>数据库在action中完事，state还需要reducer</h1>
+<p>数据库我们是操作完啦，不过组件的显示是基于state的，我们还要同步更新state，那么reducer就出场了！</p>
+<p>reducers.js</p>
+<div class="cnblogs_code"><div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div>
+<pre>import { combineReducers } from 'redux'<span style="color: #000000;">
+import { ADD_TODO_OK, REMOVE_TODO_OK ,GET_TODO_OK} from </span>'./actions'
+
+<span style="color: #0000ff;">function</span> todos(state=<span style="color: #000000;">[], action) {
+  </span><span style="color: #0000ff;">switch</span><span style="color: #000000;"> (action.type) {
+    </span><span style="color: #0000ff;">case</span><span style="color: #000000;"> GET_TODO_OK:
+      </span><span style="color: #0000ff;">return</span><span style="color: #000000;"> action.payload
+    </span><span style="color: #0000ff;">case</span><span style="color: #000000;"> ADD_TODO_OK:
+      </span><span style="color: #0000ff;">return</span><span style="color: #000000;"> [
+        ...state,
+        action.payload
+      ]
+    </span><span style="color: #0000ff;">case</span><span style="color: #000000;"> REMOVE_TODO_OK:
+      </span><span style="color: #0000ff;">return</span> state.filter((todo)=&gt;todo.key!==<span style="color: #000000;">action.payload
+      )
+    </span><span style="color: #0000ff;">default</span><span style="color: #000000;">:
+      </span><span style="color: #0000ff;">return</span><span style="color: #000000;"> state
+  }
+}
+
+const todoApp </span>=<span style="color: #000000;"> combineReducers({
+  todos
+})
+
+export </span><span style="color: #0000ff;">default</span> todoApp</pre>
+<div class="cnblogs_code_toolbar"><span class="cnblogs_code_copy"><a href="javascript:void(0);" onclick="copyCnblogsCode(this)" title="复制代码"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/copycode.gif" alt="复制代码"></a></span></div></div>
+<p>很简单，如果你还不会，可以去前面几节教程补课。</p>
+<p>来个图吧：</p>
+<p><img src="data:image/png;base64,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" alt=""></p>
+<p>action操作数据库后，要在回调中返回信号，让reducer更新state，因为只有state变了，组件才会变。state变了，组件自动就变了，至少不用苦逼地操作dom了，还是挺开心的！</p>
+<h1>为什么不提react组件</h1>
+<p>说了这么多我们的redux容器算是搞定了，为什么不提组件？不是不提，是要让大家知道，组件和redux容器的耦合度很低，我们可以完全将它们隔离开来编写，通过一些固定的套路将它们连接起来。什么套路？</p>
+<ol>
+<li>绑定state到props</li>
+<li>绑定action到props（可选）</li>
+<li>将store注入，并用provider在顶层包住组件</li>
+</ol>
+<p>redux是个状态容器，只能通过发起action改变state，这种集中管控的做法让状态管理和预测变的简单。组件只是state的展现形式而已！react只是一个界面库而已！</p>
+<p>&nbsp;</p>
+<hr>
+<h1>&nbsp;</h1>
+<h1>教程源代码及目录</h1>
+<p>如果您觉得本博客教程帮到了您，就赏颗星吧！</p>
+<p><a href="https://github.com/lewis617/react-redux-tutorial" target="_blank">https://github.com/lewis617/react-redux-tutorial</a></p>
+<p>&nbsp;</p></div><div id="MySignature" style="display: block;"><div id="AllanboltSignature">    
+        <div>作者：<a href="http://www.cnblogs.com/lewis617/" target="_blank">lewis617</a></div>
+        <div>出处：<a href="http://www.cnblogs.com/lewis617/" target="_blank">http://www.cnblogs.com/lewis617/</a></div>
+        <div>本文版权归作者和博客园共有，欢迎转载，但未经作者同意必须保留此段声明，且在文章页面明显位置给出原文连接，否则保留追究法律责任的权利.</div>  
+    </div></div>
+<div class="clear"></div>
+<div id="blog_post_info_block">
+<div id="BlogPostCategory">分类: <a href="http://www.cnblogs.com/lewis617/category/739251.html">前端</a></div>
+<div id="EntryTag">标签: <a href="http://www.cnblogs.com/lewis617/tag/react/">react</a>, <a href="http://www.cnblogs.com/lewis617/tag/redux/">redux</a></div>
+<div id="blog_post_info"><div id="green_channel">
+<a href="javascript:void(0);" id="green_channel_digg" onclick="DiggIt(5180097,cb_blogId,1);green_channel_success(this,&#39;谢谢推荐！&#39;);">好文要顶</a>
+<a id="green_channel_follow" onclick="c_follow();" href="javascript:void(0);">关注我</a>
+<a id="green_channel_favorite" onclick="AddToWz(cb_entryId);return false;" href="javascript:void(0);">收藏该文</a><a id="green_channel_contact" href="http://msg.cnblogs.com/send/lewis617" target="_blank">联系我</a>
+<a id="green_channel_weibo" href="javascript:void(0);" title="分享至新浪微博" onclick="ShareToTsina()"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/icon_weibo_24.png" alt=""></a>
+<a id="green_channel_wechat" href="javascript:void(0);" title="分享至微信" onclick="shareOnWechat()"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/wechat.png" alt=""></a>
+</div>
+<div id="author_profile">
+<div id="author_profile_info" class="author_profile_info">
+<a href="http://home.cnblogs.com/u/lewis617/" target="_blank"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/sample_face.gif" class="author_avatar" alt=""></a>
+<div id="author_profile_detail" class="author_profile_info">
+<a href="http://home.cnblogs.com/u/lewis617/">lewis617</a><br>
+<a href="http://home.cnblogs.com/u/lewis617/followees">关注 - 0</a><br>
+<a href="http://home.cnblogs.com/u/lewis617/followers">粉丝 - 63</a>
+</div>
+</div>
+<div class="clear"></div>
+<div id="author_profile_honor"></div>
+<div id="author_profile_follow">
+    <a href="javascript:void(0);" onclick="c_follow();return false;">+加关注</a>
+</div>
+</div>
+<div id="div_digg">										
+    <div class="diggit" onclick="votePost(5180097,&#39;Digg&#39;)">
+        <span class="diggnum" id="digg_count">2</span>
+    </div>
+	<div class="buryit" onclick="votePost(5180097,&#39;Bury&#39;)"> 
+		<span class="burynum" id="bury_count">0</span>
+	</div>
+	<div class="clear"></div>	
+	<div class="diggword" id="digg_tips">
+    (请您对文章做出评价)
+    </div>	
+</div>
+</div>
+<div class="clear"></div>
+<div id="post_next_prev"><a href="http://www.cnblogs.com/lewis617/p/5177852.html" class="p_n_p_prefix">« </a> 上一篇：<a href="http://www.cnblogs.com/lewis617/p/5177852.html" title="发布于2016-02-02 16:20">react+redux教程（七）自定义redux中间件</a><br><a href="http://www.cnblogs.com/lewis617/p/5184621.html" class="p_n_p_prefix">» </a> 下一篇：<a href="http://www.cnblogs.com/lewis617/p/5184621.html" title="发布于2016-02-07 11:31">自定义jinja2 过滤器</a><br></div>
+</div>
+
+
+		</div>
+		<p class="postfoot">
+			posted on <span id="post-date">2016-02-03 17:00</span> <a href="http://www.cnblogs.com/lewis617/">lewis617</a> 阅读(<span id="post_view_count">2523</span>) 评论(<span id="post_comment_count">0</span>)  <a href="http://i.cnblogs.com/EditPosts.aspx?postid=5180097" rel="nofollow">编辑</a> <a href="http://www.cnblogs.com/lewis617/p/5180097.html#" onclick="AddToWz(5180097);return false;">收藏</a>
+		</p>
+	</div>
+	<script type="text/javascript">var allowComments=true,isLogined=false,cb_blogId=246025,cb_entryId=5180097,cb_blogApp=currentBlogApp,cb_blogUserGuid='2b2be196-0c60-e511-b908-9dcfd8948a71',cb_entryCreatedDate='2016/2/3 17:00:00';loadViewCount(cb_entryId);</script>
+	
+	</div><a name="!comments"></a><div id="blog-comments-placeholder"></div><script type="text/javascript">var commentManager = new blogCommentManager();commentManager.renderComments(0);</script>
+<div id="comment_form" class="commentform">
+<a name="commentform"></a>
+<div id="divCommentShow"></div>
+<div id="comment_nav"><span id="span_refresh_tips"></span><a href="javascript:void(0);" onclick="return RefreshCommentList();" id="lnk_RefreshComments" runat="server" clientidmode="Static">刷新评论</a><a href="http://www.cnblogs.com/lewis617/p/5180097.html#" onclick="return RefreshPage();">刷新页面</a><a href="http://www.cnblogs.com/lewis617/p/5180097.html#top">返回顶部</a></div>
+<div id="comment_form_container"><div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return login(&#39;commentform&#39;);">登录</a> 或 <a rel="nofollow" href="javascript:void(0);" class="underline" onclick="return register();">注册</a>，<a href="http://www.cnblogs.com/">访问</a>网站首页。</div></div>
+<div class="ad_text_commentbox" id="ad_text_under_commentbox"></div>
+<div id="ad_t2"><a href="http://www.ucancode.com/index.htm" target="_blank">【推荐】50万行VC++源码: 大型组态工控、电力仿真CAD与GIS源码库</a><br><a href="http://www.rongcloud.cn/" target="_blank">【推荐】融云即时通讯云－豆果美食、Faceu等亿级APP都在用</a><br><a href="http://group.cnblogs.com/topic/75069.html" target="_blank">【福利】你是我的好朋友，我要送你个天猫红包</a><br><a href="https://event.open.alipay.com/?t=201607211659" target="_blank">【活动】蚂蚁金服开放平台合作伙伴大会(北京8.10)</a><br></div>
+<div id="opt_under_post"></div>
+<div id="ad_c1" class="c_ad_block"><a href="http://www.gcpowertools.com.cn/products/componentone.htm?utm_source=cnblogs&utm_medium=blogpage&utm_term=bottom&utm_content=C1&utm_campaign=community" target="_blank"><img width="300" height="250" src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/24442-20160630110653437-3203292.jpg" alt=""></a></div>
+<div id="under_post_news"><div class="itnews c_ad_block"><b>最新IT新闻</b>:<br> ·  <a href="http://news.cnblogs.com/n/550014/" target="_blank">Slack公布其投资的11家机器人公司，这背后酝酿什么大招？</a><br> ·  <a href="http://news.cnblogs.com/n/550013/" target="_blank">百度悄悄推出Android键盘TalkType 可实现快速语音输入</a><br> ·  <a href="http://news.cnblogs.com/n/550012/" target="_blank">国产手机越来越贵 因为“性价比高的，都是垃圾”？</a><br> ·  <a href="http://news.cnblogs.com/n/550011/" target="_blank">余晟：IT人的巨流河【续】</a><br> ·  <a href="http://news.cnblogs.com/n/550010/" target="_blank">优秀的程序反而是廉价</a><br>» <a href="http://news.cnblogs.com/" title="IT新闻" target="_blank">更多新闻...</a></div></div>
+<div id="ad_c2" class="c_ad_block"><a href="https://www.jiguang.cn/?from=cnblogs01" target="_blank"><img width="468" height="60" src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/24442-20160613130538213-1713265809.jpg" alt=""></a></div>
+<div id="under_post_kb"><div class="itnews c_ad_block" id="kb_block"><b>最新知识库文章</b>:<br><div id="kb_recent"> ·  <a href="http://kb.cnblogs.com/page/549631/" target="_blank">知其所以然（以算法学习为例）</a><br> ·  <a href="http://kb.cnblogs.com/page/548394/" target="_blank">如何给变量取个简短且无歧义的名字</a><br> ·  <a href="http://kb.cnblogs.com/page/549080/" target="_blank">编程的智慧</a><br> ·  <a href="http://kb.cnblogs.com/page/549049/" target="_blank">写给初学前端工程师的一封信</a><br> ·  <a href="http://kb.cnblogs.com/page/544641/" target="_blank">抽象：程序员必备的能力</a><br></div>» <a href="http://kb.cnblogs.com/" target="_blank">更多知识库文章...</a></div></div>
+<div id="HistoryToday" class="c_ad_block"></div>
+<script type="text/javascript">
+$(function () {
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverAdT2();
+    deliverAdC1();
+    deliverAdC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);    
+});
+</script>
+</div>
+
+
+</div>
+</div>
+<div id="leftmenu">
+
+
+<h3>导航</h3>
+<ul>
+<li>
+<a id="MyLinks1_HomeLink" href="http://www.cnblogs.com/">博客园</a></li>
+<li>
+<a id="MyLinks1_MyHomeLink" class="two_words" href="http://www.cnblogs.com/lewis617/">首页</a></li>
+<li>
+<a id="MyLinks1_NewPostLink" rel="nofollow" href="http://i.cnblogs.com/EditPosts.aspx?opt=1">新随笔</a></li>
+<li>
+<a id="MyLinks1_ContactLink" accesskey="9" class="two_words" rel="nofollow" href="http://msg.cnblogs.com/send/lewis617">联系</a></li>
+<li>
+<a id="MyLinks1_Syndication" class="two_words" href="http://www.cnblogs.com/lewis617/rss">订阅</a>
+<a id="MyLinks1_XMLLink" href="http://www.cnblogs.com/lewis617/rss"><img src="./react+redux教程（八）连接数据库的redux程序 - lewis617 - 博客园_files/xml.gif" alt="订阅"></a>
+</li>
+<li>
+<a id="MyLinks1_Admin" class="two_words" rel="nofollow" href="http://i.cnblogs.com/">管理</a></li>
+</ul>
+
+<div id="blog-calendar" style=""><table id="blogCalendar" class="Cal" cellspacing="0" cellpadding="0" title="Calendar">
+	<tbody><tr><td colspan="7"><table class="CalTitle" cellspacing="0">
+		<tbody><tr><td class="CalNextPrev"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2016/06/01&#39;);return false;">&lt;</a></td><td align="center">2016年7月</td><td class="CalNextPrev" align="right"><a href="javascript:void(0);" onclick="loadBlogCalendar(&#39;2016/08/01&#39;);return false;">&gt;</a></td></tr>
+	</tbody></table></td></tr><tr><th class="CalDayHeader" align="center" abbr="日" scope="col">日</th><th class="CalDayHeader" align="center" abbr="一" scope="col">一</th><th class="CalDayHeader" align="center" abbr="二" scope="col">二</th><th class="CalDayHeader" align="center" abbr="三" scope="col">三</th><th class="CalDayHeader" align="center" abbr="四" scope="col">四</th><th class="CalDayHeader" align="center" abbr="五" scope="col">五</th><th class="CalDayHeader" align="center" abbr="六" scope="col">六</th></tr><tr><td class="CalOtherMonthDay" align="center">26</td><td class="CalOtherMonthDay" align="center">27</td><td class="CalOtherMonthDay" align="center">28</td><td class="CalOtherMonthDay" align="center">29</td><td class="CalOtherMonthDay" align="center">30</td><td align="center">1</td><td class="CalWeekendDay" align="center">2</td></tr><tr><td class="CalWeekendDay" align="center">3</td><td align="center">4</td><td align="center">5</td><td align="center">6</td><td align="center">7</td><td align="center">8</td><td class="CalWeekendDay" align="center">9</td></tr><tr><td class="CalWeekendDay" align="center">10</td><td align="center">11</td><td align="center">12</td><td align="center">13</td><td align="center">14</td><td align="center">15</td><td class="CalWeekendDay" align="center">16</td></tr><tr><td class="CalWeekendDay" align="center">17</td><td align="center">18</td><td align="center">19</td><td align="center">20</td><td align="center">21</td><td align="center">22</td><td class="CalTodayDay" align="center">23</td></tr><tr><td class="CalWeekendDay" align="center">24</td><td align="center">25</td><td align="center">26</td><td align="center">27</td><td align="center">28</td><td align="center">29</td><td class="CalWeekendDay" align="center">30</td></tr><tr><td class="CalWeekendDay" align="center">31</td><td class="CalOtherMonthDay" align="center">1</td><td class="CalOtherMonthDay" align="center">2</td><td class="CalOtherMonthDay" align="center">3</td><td class="CalOtherMonthDay" align="center">4</td><td class="CalOtherMonthDay" align="center">5</td><td class="CalOtherMonthDay" align="center">6</td></tr>
+</tbody></table></div><script type="text/javascript">loadBlogDefaultCalendar();</script>
+<meta name="vs_showGrid" content="False">
+
+<h3>公告</h3>
+<div id="blog-news"><div id="profile_block">昵称：<a href="http://home.cnblogs.com/u/lewis617/">lewis617</a><br>园龄：<a href="http://home.cnblogs.com/u/lewis617/" title="入园时间：2015-09-21">10个月</a><br>粉丝：<a href="http://home.cnblogs.com/u/lewis617/followers/">63</a><br>关注：<a href="http://home.cnblogs.com/u/lewis617/followees/">0</a><div id="p_b_follow"><a href="javascript:void(0);" onclick="cnblogs.UserManager.FollowBlogger(&#39;2b2be196-0c60-e511-b908-9dcfd8948a71&#39;)">+加关注</a></div></div></div><script type="text/javascript">loadBlogNews();</script>
+
+<div id="blog-sidecolumn"><div id="sidebar_search" class="sidebar-block">
+<div id="sidebar_search" class="mySearch">
+<h3 class="catListTitle">搜索</h3>
+<div id="sidebar_search_box">
+<div id="widget_my_zzk" class="div_my_zzk"><input type="text" id="q" onkeydown="return zzk_go_enter(event);" class="input_my_zzk">&nbsp;<input onclick="zzk_go()" type="button" value="找找看" id="btnZzk" class="btn_my_zzk"></div>
+<div id="widget_my_google" class="div_my_zzk"><input type="text" name="google_q" id="google_q" onkeydown="return google_go_enter(event)" class="input_my_zzk">&nbsp;<input onclick="google_go()" type="button" value="谷歌搜索" class="btn_my_zzk"></div>
+</div>
+</div>
+
+</div><div id="sidebar_shortcut" class="sidebar-block">
+<h3 class="catListTitle">常用链接</h3>
+<ul>
+<li><a href="http://www.cnblogs.com/lewis617/p/" title="我的博客的随笔列表">我的随笔</a></li><li><a href="http://www.cnblogs.com/lewis617/MyComments.html" title="我发表过的评论列表">我的评论</a></li><li><a href="http://www.cnblogs.com/lewis617/OtherPosts.html" title="我评论过的随笔列表">我的参与</a></li><li><a href="http://www.cnblogs.com/lewis617/RecentComments.html" title="我的博客的评论列表">最新评论</a></li><li><a href="http://www.cnblogs.com/lewis617/tag/" title="我的博客的标签列表">我的标签</a></li>
+</ul>
+<div id="itemListLin_con" style="display:none;">
+
+</div></div><div id="sidebar_toptags" class="sidebar-block">
+<h3 class="catListTitle">我的标签</h3>
+<div id="MyTag">
+<ul>
+<li><a href="http://www.cnblogs.com/lewis617/tag/angular2/">angular2</a>(11)</li><li><a href="http://www.cnblogs.com/lewis617/tag/react/">react</a>(10)</li><li><a href="http://www.cnblogs.com/lewis617/tag/redux/">redux</a>(9)</li><li><a href="http://www.cnblogs.com/lewis617/tag/requirejs/">requirejs</a>(4)</li><li><a href="http://www.cnblogs.com/lewis617/tag/angularjs/">angularjs</a>(3)</li><li><a href="http://www.cnblogs.com/lewis617/tag/flask/">flask</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/karma/">karma</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/webpack/">webpack</a>(2)</li><li><a href="http://www.cnblogs.com/lewis617/tag/r.js/">r.js</a>(1)</li><li><a href="http://www.cnblogs.com/lewis617/tag/reflux/">reflux</a>(1)</li><li><a href="http://www.cnblogs.com/lewis617/tag/">更多</a></li>
+</ul>
+</div></div><div id="sidebar_categories">
+		<h3>随笔分类</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_0_Link_0" href="http://www.cnblogs.com/lewis617/category/739255.html">Android</a></li>
+			
+				<li><a id="CatList_LinkList_0_Link_1" href="http://www.cnblogs.com/lewis617/category/739253.html">windows(2)</a></li>
+			
+				<li><a id="CatList_LinkList_0_Link_2" href="http://www.cnblogs.com/lewis617/category/739251.html">前端(30)</a></li>
+			
+				</ul>
+			
+	
+		<h3>随笔档案</h3>
+		
+				<ul>
+			
+				<li><a id="CatList_LinkList_1_Link_0" href="http://www.cnblogs.com/lewis617/archive/2016/04.html">2016年4月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_1" href="http://www.cnblogs.com/lewis617/archive/2016/03.html">2016年3月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_2" href="http://www.cnblogs.com/lewis617/archive/2016/02.html">2016年2月 (11)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_3" href="http://www.cnblogs.com/lewis617/archive/2016/01.html">2016年1月 (8)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_4" href="http://www.cnblogs.com/lewis617/archive/2015/12.html">2015年12月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_5" href="http://www.cnblogs.com/lewis617/archive/2015/10.html">2015年10月 (2)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_6" href="http://www.cnblogs.com/lewis617/archive/2015/09.html">2015年9月 (3)</a></li>
+			
+				<li><a id="CatList_LinkList_1_Link_7" href="http://www.cnblogs.com/lewis617/archive/2015/04.html">2015年4月 (2)</a></li>
+			
+				</ul>
+			
+	</div><div id="sidebar_recentcomments" class="sidebar-block"><div id="recent_comments_wrap">
+<h3 class="catListTitle">最新评论</h3>
+<div class="RecentComment" id="RecentComments">
+	<div id="RecentCommentsBlock"><ul>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3475433">1. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@leavemealone不需要，计数器这个例子仅作为教学，在实际中，一个action可以改变多个数据。事实上，action是通过业务来定的，并非数据...</li>
+        <li class="recent_comment_author">--lewis617</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5129609.html#3473527">2. Re:react+reflux入门教程</a></li>
+        <li class="recent_comment_body">还没看，应该是好文！哈哈。</li>
+        <li class="recent_comment_author">--ACaptain</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3472654">3. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">每一个state.XXX 做不同的操作的时候都需要注册一个actions函数吗？this.state = {num1: 1 , mum2: 2 };比如：当num1 和 num2都需要进行加减乘除的......</li>
+        <li class="recent_comment_author">--leavemealone</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3469561">4. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@naruto丶阳dispatch一个action创建函数只是发起一个信号，真正更新state的是reducer。如果非要纠结这句话，可以理解为我省略了“然后使用reducer更新state”这半句。...</li>
+        <li class="recent_comment_author">--lewis617</li>
+        <li class="recent_comment_title"><a href="http://www.cnblogs.com/lewis617/p/5145073.html#3468648">5. Re:react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware</a></li>
+        <li class="recent_comment_body">@lewis617我知道是用reducer的纯函数更新啊，我想问的是store.dispatch(action)也能更新state是什么意思？...</li>
+        <li class="recent_comment_author">--naruto丶阳</li>
+</ul>
+</div>
+</div>
+</div></div><div id="sidebar_topviewedposts" class="sidebar-block"><div id="topview_posts_wrap">
+<h3 class="catListTitle">阅读排行榜</h3>
+<div class="RecentComment" id="TopViewPosts"> 
+	<div id="TopViewPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(16055)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">2. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(5300)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5129609.html">3. react+reflux入门教程(4831)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">4. angular2系列教程（一）hello world(3422)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5149006.html">5. react+redux教程（三）reduce()、filter()、map()、some()、every()、...展开属性(3339)</a></li></ul></div>
+</div>
+</div></div><div id="sidebar_topcommentedposts" class="sidebar-block"><div id="topfeedback_posts_wrap">
+<h3 class="catListTitle">评论排行榜</h3>
+<div class="RecentComment" id="TopCommentsPosts">
+	<div id="TopFeedbackPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(26)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">2. angular2系列教程（一）hello world(14)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5177852.html">3. react+redux教程（七）自定义redux中间件(7)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">4. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(4)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5126334.html">5. angular开发者吐槽react+redux的复杂：“一个demo证明你的开发效率低下”(3)</a></li></ul></div>
+</div></div></div><div id="sidebar_topdiggedposts" class="sidebar-block"><div id="topdigg_posts_wrap">
+<h3 class="catListTitle">推荐排行榜</h3>
+<div class="RecentComment">
+	<div id="TopDiggPostsBlock"><ul><li><a href="http://www.cnblogs.com/lewis617/p/5145073.html">1. react+redux教程（一）connect、applyMiddleware、thunk、webpackHotMiddleware(10)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5147445.html">2. react+redux教程（二）redux的单一状态树完全替代了react的状态机？(5)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5129609.html">3. react+reflux入门教程(4)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5191007.html">4. angular2系列教程（一）hello world(3)</a></li><li><a href="http://www.cnblogs.com/lewis617/p/5170835.html">5. react+redux教程（五）异步、单一state树结构、componentWillReceiveProps(3)</a></li></ul></div>
+</div></div></div></div><script type="text/javascript">loadBlogSideColumn();</script>
+
+</div>
+</div>
+<div class="clear"></div>
+<div id="footer">
+
+<p id="footer">
+	Powered by: 
+	<br>
+	
+	<a id="Footer1_Hyperlink3" name="Hyperlink1" href="http://www.cnblogs.com/" style="font-family:Verdana;font-size:12px;">博客园</a>
+	<br>
+	Copyright © lewis617
+</p>
+</div>
+</div>
+
+
+
+</body></html>
